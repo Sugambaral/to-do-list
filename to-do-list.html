@@ -53,22 +53,84 @@
       let addToDoButton = document.getElementById("addToDo");
       let toDoContainer = document.getElementById("toDoContainer");
       let inputfield = document.getElementById("inputfield");
-
-      addToDoButton.addEventListener("click", function () {
-        var paragraph = document.createElement("p"); //paragraph is created and stored in variable paragraph
-        paragraph.classList.add("paragraph-styling"); //paragraph-styling class is added to paragraph
-        paragraph.innerText = inputfield.value; //paragraph stores the text given in inputfield
-        toDoContainer.appendChild(paragraph); //paragraph is made in the conatiner
-        inputfield.value = ""; // it blanks the input section
-
+      
+      function fetchToDos() {
+        let todos;
+        if (localStorage.getItem("todos") === null) {
+          todos = [];
+        } else {
+          todos = JSON.parse(localStorage.getItem("todos"));
+        }
+        return todos;
+      }
+      
+      function saveToDos(todo) {
+        let todos = fetchToDos();
+        todos.push({ task: todo, status: "active" });
+        localStorage.setItem("todos", JSON.stringify(todos));
+      }
+      
+      function removeFromLocalStorage(todoText) {
+        let todos = fetchToDos();
+        todos = todos.filter(todo => todo.task !== todoText);
+        localStorage.setItem("todos", JSON.stringify(todos));
+      }
+      
+      // load to-do from local storage
+      window.onload = function () {
+        let todos = fetchToDos();
+        todos.forEach(function (todo) {
+          createToDoElement(todo.task, todo.status, false);
+        });
+      };
+      
+      function createToDoElement(todoText, status, newTodo=true) {
+        var paragraph = document.createElement("p");
+        paragraph.classList.add("paragraph-styling");
+        paragraph.innerText = todoText;
+        if (status === "completed") {
+          paragraph.classList.add("completed");
+        }
+        toDoContainer.appendChild(paragraph);
+        inputfield.value = "";
+      
+        // add click listener to mark as completed
         paragraph.addEventListener("click", function () {
-          //if paragraph is clicked,then function is fired styling line-through text-decoration
-          paragraph.style.textDecoration = "line-through";
+          if (!paragraph.classList.contains("completed")) {
+            paragraph.classList.add("completed");
+            updateTaskStatus(todoText, "completed");
+          } else {
+            paragraph.classList.remove("completed");
+            updateTaskStatus(todoText, "active");
+          }
         });
+      
+        // add double click listener to remove from UI and local storage
         paragraph.addEventListener("dblclick", function () {
-          //if paragraph is double clicked then paragraph is removed from the container
           toDoContainer.removeChild(paragraph);
+          removeFromLocalStorage(todoText);
         });
+        
+        // save to local storage initially
+        if(newTodo) saveToDos(todoText);
+      }
+      
+      function updateTaskStatus(todoText, status) {
+        let todos = fetchToDos();
+        todos.forEach(todo => {
+          if (todo.task === todoText) {
+            todo.status = status;
+          }
+        });
+        localStorage.setItem("todos", JSON.stringify(todos));
+      }
+      
+      addToDoButton.addEventListener("click", function () {
+        if (inputfield.value.trim() !== "") {
+          createToDoElement(inputfield.value.trim(), "active");
+        } else {
+          alert("Please enter a valid to-do!");
+        }
       });
     </script>
   </body>
