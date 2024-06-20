@@ -66,17 +66,13 @@
       
       function saveToDos(todo) {
         let todos = fetchToDos();
-        todos.push(todo);
+        todos.push({ task: todo, status: "active" });
         localStorage.setItem("todos", JSON.stringify(todos));
       }
       
       function removeFromLocalStorage(todoText) {
         let todos = fetchToDos();
-        todos.forEach(function (todo, index) {
-          if (todo === todoText) {
-            todos.splice(index, 1);
-          }
-        });
+        todos = todos.filter(todo => todo.task !== todoText);
         localStorage.setItem("todos", JSON.stringify(todos));
       }
       
@@ -84,34 +80,54 @@
       window.onload = function () {
         let todos = fetchToDos();
         todos.forEach(function (todo) {
-          createToDoElement(todo);
+          createToDoElement(todo.task, todo.status, false);
         });
       };
       
-      function createToDoElement(todoText) {
+      function createToDoElement(todoText, status, newTodo=true) {
         var paragraph = document.createElement("p");
         paragraph.classList.add("paragraph-styling");
         paragraph.innerText = todoText;
+        if (status === "completed") {
+          paragraph.classList.add("completed");
+        }
         toDoContainer.appendChild(paragraph);
         inputfield.value = "";
       
-        // save to local storage
-        saveToDos(todoText);
-      
         // add click listener to mark as completed
         paragraph.addEventListener("click", function () {
-          paragraph.style.textDecoration = "line-through";
+          if (!paragraph.classList.contains("completed")) {
+            paragraph.classList.add("completed");
+            updateTaskStatus(todoText, "completed");
+          } else {
+            paragraph.classList.remove("completed");
+            updateTaskStatus(todoText, "active");
+          }
         });
       
+        // add double click listener to remove from UI and local storage
         paragraph.addEventListener("dblclick", function () {
           toDoContainer.removeChild(paragraph);
           removeFromLocalStorage(todoText);
         });
+        
+        // save to local storage initially
+        if(newTodo) saveToDos(todoText);
+      }
+      
+      function updateTaskStatus(todoText, status) {
+        let todos = fetchToDos();
+        todos.forEach(todo => {
+          if (todo.task === todoText) {
+            todo.status = status;
+          }
+        });
+        localStorage.setItem("todos", JSON.stringify(todos));
       }
       
       addToDoButton.addEventListener("click", function () {
         if (inputfield.value.trim() !== "") {
-          createToDoElement(inputfield.value.trim());
+          createToDoElement(inputfield.value.trim(), "active");
         } else {
           alert("Please enter a valid to-do!");
         }
